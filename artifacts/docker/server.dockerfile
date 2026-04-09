@@ -9,8 +9,8 @@ RUN apt_install_clean.sh \
     cmake
 
 # Compile opencv.
-COPY installers/opencv.sh /tmp/installers/
-RUN bash /tmp/installers/opencv.sh && rm /tmp/installers/opencv.sh
+# COPY installers/opencv.sh /tmp/installers/
+# RUN bash /tmp/installers/opencv.sh && rm /tmp/installers/opencv.sh
 
 # cnmem, for triton
 RUN cd /tmp && \
