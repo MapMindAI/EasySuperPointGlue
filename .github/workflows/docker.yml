@@ -6,6 +6,11 @@ on:
     paths:
       - ".github/workflows/docker.yml"
       - "artifacts/**"
+  pull_request:
+    branches: ["master"]
+    paths:
+      - ".github/workflows/docker.yml"
+      - "artifacts/**"
   workflow_dispatch:
 
 permissions:
