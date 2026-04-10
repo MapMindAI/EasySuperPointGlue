@@ -18,10 +18,11 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: tritonserver
+  IMAGE_NAME_AMD: tritonserver_amd64
+  IMAGE_NAME_ARM: tritonserver_jetson
 
 jobs:
-  docker:
+  docker-amd64:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_AMD }}
           tags: |
             type=raw,value=latest
             type=sha
@@ -50,5 +51,38 @@ jobs:
           context: ./artifacts/docker
           file: ./artifacts/docker/server.dockerfile
           push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  docker-jetson:
+    runs-on: ARM64
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_ARM }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./artifacts/docker
+          file: ./artifacts/docker/xavier_server.dockerfile
+          push: true
+          platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
