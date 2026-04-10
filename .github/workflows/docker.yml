@@ -18,10 +18,11 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: tritonserver
+  IMAGE_NAME_AMD: tritonserver_amd64
+  IMAGE_NAME_ARM: tritonserver_jetson
 
 jobs:
-  docker:
+  docker-amd64:
     runs-on: ubuntu-latest
 
     steps:
@@ -39,7 +40,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
+          images: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME_AMD }}
           tags: |
             type=raw,value=latest
             type=sha
@@ -52,3 +53,4 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
