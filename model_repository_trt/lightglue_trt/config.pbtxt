@@ -1,4 +1,4 @@
-backend: "onnxruntime"
+platform: "tensorrt_plan"
 max_batch_size : 0
 input [
   {
@@ -51,12 +51,12 @@ output [
   {
     name: "match_indices"
     data_type: TYPE_INT32
-    dims: [ 1, 512]
+    dims: [ -1, -1]
   },
   {
     name: "score"
     data_type: TYPE_FP32
-    dims: [ 1, 512]
+    dims: [ -1, -1]
   }
 ]
 
@@ -68,4 +68,4 @@ instance_group [
   }
 ]
 
-default_model_filename: "lightglue_fp16.onnx"
+default_model_filename: "lightglue_fp16.plan"

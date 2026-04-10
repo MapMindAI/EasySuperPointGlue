@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tritonserver:23.12-py3
+FROM nvcr.io/nvidia/tritonserver:25.05-py3
 
 COPY installers/apt_install_clean.sh /usr/local/bin/
 
