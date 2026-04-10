@@ -2,7 +2,7 @@ import tritonclient.grpc as grpcclient
 import numpy as np
 import time
 import cv2
-
+from superpoint import find_triton_model
 
 def make_input(name, array, dtype):
     inp = grpcclient.InferInput(name, array.shape, dtype)
@@ -13,12 +13,14 @@ def make_input(name, array, dtype):
 # TODO(wenhao): Add error handling to prevent direct program exit
 # https://github.com/cvg/LightGlue/blob/746fac2c042e05d1865315b1413419f1c1e7ba55/lightglue/lightglue.py#L333
 class LightGlue:
-    def __init__(self, triton_url, model_name="lightglue_onnx", model_version="1", match_thresh=0.1):
+    def __init__(self, triton_url, model_key="lightglue", model_version="1", match_thresh=0.1):
         self.grpc_client = grpcclient.InferenceServerClient(url=triton_url, verbose=False)
         self.model_version = model_version
-        self.model_name = model_name
+        self.model_name = find_triton_model(self.grpc_client, model_key)
+        print(f"Start {self.model_name} from {triton_url}")
+
         self.score_name = "score"
-        if "large" in model_name:
+        if "large" in self.model_name:
             self.match_thresh_np = np.array([match_thresh], dtype=np.float32)  # [1]
             self.score_name = "match_scores"
         else:
@@ -139,4 +141,4 @@ if __name__ == "__main__":
     print("super glue time :", time_ms_end_sg - time_ms_end, "ms")
 
     out_img = draw_matches(image_1, image_2, ktps1[0], ktps2[0], match_indices, match_scores)
-    cv2.imwrite("data/light_glue.png", out_img)
+    cv2.imwrite("data/lightglue_result.jpg", out_img)

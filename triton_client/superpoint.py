@@ -3,12 +3,25 @@ import numpy as np
 import time
 import cv2
 
+
+def list_all_triton_models(client):
+    model_index = client.get_model_repository_index()
+    for model in model_index.models:
+        print(f"Model: {model.name}, Version: {model.version}, State: {model.state}")
+
+def find_triton_model(client, model_key):
+    model_index = client.get_model_repository_index()
+    for model in model_index.models:
+        if model_key in model.name:
+            return model.name
+    return None
+
 # TODO(wenhao): Add error handling to prevent direct program exit
 class SuperPoint:
     def __init__(
         self,
         triton_url,
-        model_name="superpoint_onnx",
+        model_key="superpoint",
         model_version="1",
         max_image_shape=1080,
         keypoint_thresh=0.015,
@@ -16,7 +29,8 @@ class SuperPoint:
         self.grpc_client = grpcclient.InferenceServerClient(url=triton_url, verbose=False)
         self.max_image_shape = max_image_shape
         self.model_version = model_version
-        self.model_name = model_name
+        self.model_name = find_triton_model(self.grpc_client, model_key)
+        print(f"Start {self.model_name} from {triton_url}")
 
         keypoint_thresh_np = np.array([[keypoint_thresh]], dtype=np.float32)
         self.input_thresh = grpcclient.InferInput(
@@ -99,4 +113,4 @@ if __name__ == "__main__":
         pt0 = tuple(map(int, ktps[0][i]))
         cv2.circle(image_1, pt0, 3, (0, 255, 0), -1)
 
-    cv2.imwrite("data/superpoint_result.png", image_1)
+    cv2.imwrite("data/superpoint_result.jpg", image_1)

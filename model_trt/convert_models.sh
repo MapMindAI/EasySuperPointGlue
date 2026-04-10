@@ -3,14 +3,13 @@
 
 output_file=/repo/model_repository_trt/superpoint_trt/1/superpoint_fp16.plan
 if [ -f ${output_file} ]; then
-    echo "============== SuperPoint plan file exist =============="
+  echo "============== SuperPoint plan file exist =============="
 else
+  echo "============== Create SuperPoint plan file =============="
 	/usr/src/tensorrt/bin/trtexec --onnx=/repo/model_repository/superpoint_onnx/1/superpoint_fp16.onnx \
 			--minShapes='image':1x1x120x240,'keypoint_threshold':1x1 \
 			--optShapes='image':1x1x540x960,'keypoint_threshold':1x1 \
 			--maxShapes='image':1x1x1080x1920,'keypoint_threshold':1x1 \
-			--device=0 \
-		  --workspace=22000 \
 		  --precisionConstraints="obey" \
 		  --fp16 \
 		  --layerPrecisions="GridSample_210:fp32" \
@@ -36,8 +35,9 @@ fi
 
 output_file=/repo/model_repository_trt/lightglue_trt/1/lightglue_fp16.plan
 if [ -f ${output_file} ]; then
-    echo "============== LightGlue plan file exist =============="
+  echo "============== LightGlue plan file exist =============="
 else
+  echo "============== Create LightGlue plan file =============="
 	/usr/src/tensorrt/bin/trtexec --onnx=/repo/model_repository/lightglue_onnx/1/lightglue_fp16.onnx \
 		  --fp16 \
 		  --precisionConstraints=obey \
