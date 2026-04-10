@@ -79,10 +79,10 @@ python triton_client/superpoint.py
 
 ## ⚙️ ONNX vs TensorRT
 
-| Type | Pros           | Cons         |
-| ---- | -------------- | ------------ |
-| ONNX | portable, easy | slower       |
-| TRT  | fastest        | GPU-specific |
+| Type | Pros           | Cons         | Super Point (GTX 1650Ti) |  Light Glue |
+| ---- | -------------- | ------------ |-------------|-------------|
+| ONNX | portable, easy | slower       |   54.6ms    |   29.31ms   |
+| TRT  | fastest        | GPU-specific |   26.5ms    |   31.36ms   |
 
 * Use **ONNX** for development
 * Use **TensorRT** for production (build per GPU)
