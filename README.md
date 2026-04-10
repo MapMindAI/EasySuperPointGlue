@@ -9,6 +9,8 @@ This repository provides:
 * simple Python gRPC client examples
 * clean separation between **GPU inference environment** and **application logic**
 
+![lightglue example](assets/structure.png)
+
 ## ✨ Features
 
 * 🚀 Serve SuperPoint and LightGlue via Triton
