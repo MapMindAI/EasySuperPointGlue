@@ -23,7 +23,7 @@ class SuperPoint:
         triton_url,
         model_key="superpoint",
         model_version="1",
-        max_image_shape=1080,
+        max_image_shape=960,
         keypoint_thresh=0.015,
     ):
         self.grpc_client = grpcclient.InferenceServerClient(url=triton_url, verbose=False)

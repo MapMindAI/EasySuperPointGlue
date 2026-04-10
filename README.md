@@ -9,6 +9,8 @@ This repository provides:
 * simple Python gRPC client examples
 * clean separation between **GPU inference environment** and **application logic**
 
+![lightglue example](assets/structure.png)
+
 ## ✨ Features
 
 * 🚀 Serve SuperPoint and LightGlue via Triton
@@ -50,8 +52,8 @@ Dockerized Triton Server
 
 ### 1. Obtain the docker image
 
-Pull directly from ghcr `docker pull ghcr.io/mapmindai/tritonserver:latest`.
-(or you could build it if you wish to `docker build -f artifacts/docker/server.dockerfile -t tritonserver artifacts/docker/`)
+Pull directly from ghcr `docker pull ghcr.io/mapmindai/tritonserver_amd64:latest`.
+(or you could build it if you wish to `docker build -f artifacts/docker/server.dockerfile -t tritonserver_amd64 artifacts/docker/`)
 
 ### 1. Prepare model repository
 
@@ -64,6 +66,7 @@ Build TensorRT Engine, Use NVIDIA TensorRT container:
 * Start the TensorRT version : `./run_server_onnx.sh`
   * In the first run, the TensorRT plan files will be create, it might take a while.
   * Check logs with `docker logs -f tritonserver_trt`.
+* Start the ONNX version using **CPU** : `./run_server_cpu.sh`
 
 ### 3. Run client example
 
