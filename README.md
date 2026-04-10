@@ -52,8 +52,8 @@ Dockerized Triton Server
 
 ### 1. Obtain the docker image
 
-Pull directly from ghcr `docker pull ghcr.io/mapmindai/tritonserver:latest`.
-(or you could build it if you wish to `docker build -f artifacts/docker/server.dockerfile -t tritonserver artifacts/docker/`)
+Pull directly from ghcr `docker pull ghcr.io/mapmindai/tritonserver_amd64:latest`.
+(or you could build it if you wish to `docker build -f artifacts/docker/server.dockerfile -t tritonserver_amd64 artifacts/docker/`)
 
 ### 1. Prepare model repository
 
