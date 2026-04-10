@@ -64,6 +64,7 @@ Build TensorRT Engine, Use NVIDIA TensorRT container:
 * Start the TensorRT version : `./run_server_onnx.sh`
   * In the first run, the TensorRT plan files will be create, it might take a while.
   * Check logs with `docker logs -f tritonserver_trt`.
+* Start the ONNX version using **CPU** : `./run_server_cpu.sh`
 
 ### 3. Run client example
 
