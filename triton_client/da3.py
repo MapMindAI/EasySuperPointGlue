@@ -24,7 +24,6 @@ class DepthAnything3:
         invert_vis=True,
         expected_num_images=None,  # None means do not enforce
         input_name="image",
-        output_name="depth",
     ):
         self.grpc_client = grpcclient.InferenceServerClient(url=triton_url, verbose=False)
         self.model_version = model_version
@@ -42,12 +41,13 @@ class DepthAnything3:
         self.invert_vis = invert_vis
         self.expected_num_images = expected_num_images
         self.input_name = input_name
-        self.output_name = output_name
 
         print(f"Start {self.model_name} from {triton_url}")
 
         self.desired_outputs = [
-            grpcclient.InferRequestedOutput(self.output_name),
+            grpcclient.InferRequestedOutput("depth"),
+            grpcclient.InferRequestedOutput("intrinsics"),
+            grpcclient.InferRequestedOutput("extrinsics"),
         ]
 
     def _preprocess_single_image(self, image_numpy):
@@ -132,6 +132,12 @@ class DepthAnything3:
         }
         return x, meta
 
+    def get_response(self, response, key):
+        result = response.as_numpy(key)
+        if result is None:
+            raise RuntimeError(f"Triton returned no '{key}' output")
+        return result
+
     def run(self, images):
         x, meta = self._build_input_tensor(images)
 
@@ -147,9 +153,9 @@ class DepthAnything3:
             outputs=self.desired_outputs,
         )
 
-        depth = response.as_numpy(self.output_name)
-        if depth is None:
-            raise RuntimeError(f"Triton returned no '{self.output_name}' output")
+        depth = self.get_response(response, "depth")
+        extrinsics = self.get_response(response, "extrinsics")
+        intrinsics = self.get_response(response, "intrinsics")
 
         # expected [1, N, H, W]
         if depth.ndim != 4 or depth.shape[0] != 1:
@@ -162,7 +168,8 @@ class DepthAnything3:
             )
 
         depth_list = []
-        depth_vis_list = []
+        intrinsics_list = []
+        extrinsics_list = []
 
         for i in range(num_images):
             depth_i = depth[0, i]
@@ -170,14 +177,15 @@ class DepthAnything3:
             depth_i_resized = cv2.resize(
                 depth_i, (orig_w, orig_h), interpolation=cv2.INTER_CUBIC
             )
-            depth_i_vis = self._depth_to_vis(depth_i_resized)
-
             depth_list.append(depth_i_resized)
-            depth_vis_list.append(depth_i_vis)
+            intrinsics_list.append(intrinsics[0, i])
+            extrinsics_list.append(extrinsics[0, i])
+
 
         return {
-            "depth_raw": depth,                 # [1, N, H, W]
-            "depth_list": depth_list,           # list of HxW
+            "depth_list": depth_list,                   # list of HxW
+            "intrinsics_list": intrinsics_list,           # list of 3x3
+            "extrinsics_list": extrinsics_list,           # list of 3x4
         }
 
     def run_paths(self, image_paths):
@@ -205,15 +213,23 @@ class DepthAnything3:
 if __name__ == "__main__":
     da3 = DepthAnything3(
         triton_url="0.0.0.0:8001",
-        expected_num_images=2,
+        expected_num_images=None,
     )
 
     time_ms_begin = time.time() * 1000
     result = da3.run_paths([
-        "data/00401.jpg",
-        "data/00451.jpg",
+        "data/00221.jpg",
+        "data/00261.jpg",
+        "data/00321.jpg",
+        "data/00361.jpg",
+        "data/00421.jpg",
+        "data/00461.jpg",
+        "data/00521.jpg",
+        "data/00561.jpg",
+        "data/00621.jpg",
+        "data/00661.jpg",
     ])
     time_ms_end = time.time() * 1000
-    print(f"{result["depth_raw"].shape} {len(result["depth_list"])}, used {time_ms_end - time_ms_begin}ms")
+    print(f"{len(result["depth_list"])}, used {time_ms_end - time_ms_begin}ms")
 
     da3.save_visualizations(result, prefix="data/depth")

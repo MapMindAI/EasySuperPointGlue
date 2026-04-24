@@ -36,6 +36,12 @@ This repo solves that by:
 👉 Running all GPU inference inside a **Triton server (Docker)**
 👉 Letting other projects interact via a **lightweight client**
 
+## Support Models
+
+* [SuperPoint](https://github.com/rpautrat/SuperPoint)
+* [LightGlue](https://github.com/cvg/lightglue)
+* [Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) with [Depth-Anything-V3-ONNX](https://huggingface.co/gggliuye/Depth-Anything-V3-ONNX)
+
 ## 🏗️ Architecture
 
 ```
@@ -80,12 +86,6 @@ python triton_client/superpoint.py
 ```
 
 ![lightglue example](assets/lightglue_result.jpg)
-
-## Models
-
-* [SuperPoint](https://github.com/rpautrat/SuperPoint)
-* [LightGlue](https://github.com/cvg/lightglue)
-* [Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) with [Depth-Anything-V3-ONNX](https://huggingface.co/gggliuye/Depth-Anything-V3-ONNX)
 
 ## ⚙️ ONNX vs TensorRT
 
