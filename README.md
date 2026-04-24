@@ -1,6 +1,6 @@
-# EasySuperPointGlue
+# EasyTensorRT
 
-A **Dockerized Triton inference service** for SuperPoint and LightGlue with support for both **ONNX** and **TensorRT (TRT)** models.
+A **Dockerized Triton inference service** for SuperPoint and LightGlue (and other models) with support for both **ONNX** and **TensorRT (TRT)** models.
 
 This repository provides:
 
@@ -46,6 +46,7 @@ Your Application
 Dockerized Triton Server
    ├── SuperPoint (ONNX / TRT)
    └── LightGlue  (ONNX / TRT)
+   └── Other Models  (ONNX / TRT)
 ```
 
 ## 🚀 Quick Start
@@ -79,6 +80,12 @@ python triton_client/superpoint.py
 ```
 
 ![lightglue example](assets/lightglue_result.jpg)
+
+## Models
+
+* [SuperPoint](https://github.com/rpautrat/SuperPoint)
+* [LightGlue](https://github.com/cvg/lightglue)
+* [Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) with [Depth-Anything-V3-ONNX](https://huggingface.co/gggliuye/Depth-Anything-V3-ONNX)
 
 ## ⚙️ ONNX vs TensorRT
 
