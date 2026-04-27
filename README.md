@@ -94,10 +94,11 @@ python triton_client/depthanything3.py
 
 ## ⚙️ ONNX vs TensorRT
 
-| Type | Pros           | Cons         | Super Point (GTX 1650Ti) |  Light Glue (GTX 1650Ti) |
-| ---- | -------------- | ------------ |-------------|-------------|
-| ONNX | portable, easy | slower       |   54.6ms    |   29.31ms   |
-| TRT  | fastest        | GPU-specific |   26.5ms    |   31.36ms   |
+| Type | Pros           | Cons         | SP          |     LG      |  DA3 (10 images)|
+| ---- | -------------- | ------------ |-------------|-------------|-----------------|
+| ONNX | portable, easy | slower       |   54.6ms    |   29.31ms   | 2903.10ms       |
+| TRT  | fastest        | GPU-specific |   26.5ms    |   31.36ms   | 1214.45ms       |
 
+* Tested on **GTX 1650Ti**
 * Use **ONNX** for development
 * Use **TensorRT** for production (build per GPU)
