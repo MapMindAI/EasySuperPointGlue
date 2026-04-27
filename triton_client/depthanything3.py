@@ -398,7 +398,7 @@ if __name__ == "__main__":
     time_ms_begin = time.time() * 1000
     result, images = da3.run_paths(image_paths)
     time_ms_end = time.time() * 1000
-    print(f"{len(result["depth_list"])}, used {time_ms_end - time_ms_begin}ms")
+    print(f"DA3 used {time_ms_end - time_ms_begin}ms")
 
     da3.save_visualizations(result, prefix="data/depth")
 
@@ -410,6 +410,6 @@ if __name__ == "__main__":
         rgb_list=images,
         min_depth=0.01,
         max_depth=100.0,
-        sample_stride=2,
+        sample_stride=4,
     )
     save_pointcloud_ply("data/cloud.ply", points, colors)
