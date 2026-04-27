@@ -4,7 +4,7 @@ set -e
 
 MODEL_DIR=$(pwd)
 
-docker run -d --gpus all --rm --name 'tritonserver_trt' \
+docker run --gpus all --rm --name 'tritonserver_trt' \
 -p 8001:8001 \
 -v ${MODEL_DIR}:/repo \
 -v ${MODEL_DIR}/workspace:/workspace \
