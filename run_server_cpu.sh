@@ -9,7 +9,10 @@ docker run --rm --name 'tritonserver' \
 -v ${MODEL_DIR}:/repo \
 -v ${MODEL_DIR}/workspace:/workspace \
 ghcr.io/mapmindai/tritonserver_amd64:latest \
-tritonserver --model-repository=/repo/model_repository; exec bash
+bash -c "
+  echo '====> Starting Triton'
+  tritonserver --model-repository=/repo/model_repository
+"
 
 
 # docker exec -it tritonserver bash
