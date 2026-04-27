@@ -1,0 +1,37 @@
+platform: "onnxruntime_onnx"
+max_batch_size: 0
+
+input [
+  {
+    name: "image"
+    data_type: TYPE_FP32
+    dims: [ 1, 10, 3, 280, 504 ]
+  }
+]
+
+output [
+  {
+    name: "depth"
+    data_type: TYPE_FP32
+    dims: [ 1, 10, 280, 504 ]
+  },
+  {
+    name: "intrinsics"
+    data_type: TYPE_FP32
+    dims: [ 1, 10, 3, 3 ]
+  },
+  {
+    name: "extrinsics"
+    data_type: TYPE_FP32
+    dims: [ 1, 10, 3, 4 ]
+  }
+]
+
+instance_group [
+  {
+    kind: KIND_GPU
+    count: 1
+  }
+]
+
+default_model_filename: "da3_small_10_504x280.onnx"

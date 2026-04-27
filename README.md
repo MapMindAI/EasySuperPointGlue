@@ -1,6 +1,6 @@
-# EasySuperPointGlue
+# EasyTensorRT
 
-A **Dockerized Triton inference service** for SuperPoint and LightGlue with support for both **ONNX** and **TensorRT (TRT)** models.
+A **Dockerized Triton inference service** for SuperPoint and LightGlue (and other models) with support for both **ONNX** and **TensorRT (TRT)** models.
 
 This repository provides:
 
@@ -36,6 +36,12 @@ This repo solves that by:
 👉 Running all GPU inference inside a **Triton server (Docker)**
 👉 Letting other projects interact via a **lightweight client**
 
+## Support Models
+
+* [SuperPoint](https://github.com/rpautrat/SuperPoint)
+* [LightGlue](https://github.com/cvg/lightglue)
+* [Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) with [Depth-Anything-V3-ONNX](https://huggingface.co/gggliuye/Depth-Anything-V3-ONNX)
+
 ## 🏗️ Architecture
 
 ```
@@ -45,7 +51,8 @@ Your Application
         ↓
 Dockerized Triton Server
    ├── SuperPoint (ONNX / TRT)
-   └── LightGlue  (ONNX / TRT)
+   ├── LightGlue  (ONNX / TRT)
+   └── Other Models  (ONNX / TRT)
 ```
 
 ## 🚀 Quick Start
@@ -62,10 +69,8 @@ Build TensorRT Engine, Use NVIDIA TensorRT container:
 ### 3. Start Triton server
 
 * Start the ONNX version : `./run_server_onnx.sh`
-  * Check logs with `docker logs -f tritonserver`.
 * Start the TensorRT version : `./run_server_onnx.sh`
-  * In the first run, the TensorRT plan files will be create, it might take a while.
-  * Check logs with `docker logs -f tritonserver_trt`.
+  * In the first run, the TensorRT plan files need to be create (to best fit your GPU), **it will take a while**.
 * Start the ONNX version using **CPU** : `./run_server_cpu.sh`
 
 ### 3. Run client example
@@ -79,6 +84,13 @@ python triton_client/superpoint.py
 ```
 
 ![lightglue example](assets/lightglue_result.jpg)
+
+```bash
+python triton_client/depthanything3.py
+```
+
+![da3 example](assets/DA3_result.jpg)
+
 
 ## ⚙️ ONNX vs TensorRT
 
