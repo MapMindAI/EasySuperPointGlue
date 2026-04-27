@@ -51,7 +51,7 @@ Your Application
         ↓
 Dockerized Triton Server
    ├── SuperPoint (ONNX / TRT)
-   └── LightGlue  (ONNX / TRT)
+   ├── LightGlue  (ONNX / TRT)
    └── Other Models  (ONNX / TRT)
 ```
 
