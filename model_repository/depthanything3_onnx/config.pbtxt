@@ -16,6 +16,11 @@ output [
     dims: [ 1, 10, 280, 504 ]
   },
   {
+    name: "depth_conf"
+    data_type: TYPE_FP32
+    dims: [ 1, 10, 280, 504 ]
+  },
+  {
     name: "intrinsics"
     data_type: TYPE_FP32
     dims: [ 1, 10, 3, 3 ]
