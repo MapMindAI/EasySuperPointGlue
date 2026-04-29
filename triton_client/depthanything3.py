@@ -2,22 +2,41 @@ import tritonclient.grpc as grpcclient
 import numpy as np
 import cv2
 import time
-from superpoint import find_triton_model
-import tritonclient.grpc as grpcclient
-import numpy as np
-import cv2
-import time
+
+try:
+    from .logging_utils import configure_logging, get_logger
+except ImportError:
+    from logging_utils import configure_logging, get_logger
+
+
+logger = get_logger(__name__)
+
+
+def list_all_triton_models(client):
+    model_index = client.get_model_repository_index()
+    for model in model_index.models:
+        logger.info("Model: %s, Version: %s, State: %s", model.name, model.version, model.state)
+
+
+def find_triton_model(client, model_key):
+    model_index = client.get_model_repository_index()
+    for model in model_index.models:
+        if model_key in model.name:
+            return model.name
+    return None
 
 
 def merge_rgbd_to_pointcloud_numpy(
     depth_list,
     intrinsics_list,
     extrinsics_list,
+    depth_conf_list=None,
     rgb_list=None,
     depth_scale=1.0,
     min_depth=1e-6,
     max_depth=None,
     sample_stride=1,
+    min_confidence=0.0,
 ):
     """
     Merge multiple RGBD frames into one world-space point cloud using only NumPy.
@@ -42,6 +61,8 @@ def merge_rgbd_to_pointcloud_numpy(
 
     if rgb_list is not None and len(rgb_list) != len(depth_list):
         raise ValueError("rgb_list must have same length as depth_list")
+    if depth_conf_list is not None and len(depth_conf_list) != len(depth_list):
+        raise ValueError("depth_conf_list must have same length as depth_list")
 
     all_points = []
     all_colors = []
@@ -50,6 +71,7 @@ def merge_rgbd_to_pointcloud_numpy(
         depth = np.asarray(depth_list[i], dtype=np.float32) * depth_scale
         K = np.asarray(intrinsics_list[i], dtype=np.float32)
         ext = np.asarray(extrinsics_list[i], dtype=np.float32)
+        conf = None if depth_conf_list is None else np.asarray(depth_conf_list[i], dtype=np.float32)
 
         if depth.ndim != 2:
             raise ValueError(f"depth_list[{i}] must have shape (H, W), got {depth.shape}")
@@ -61,18 +83,16 @@ def merge_rgbd_to_pointcloud_numpy(
         elif ext.shape == (4, 4):
             ext44 = ext
         else:
-            raise ValueError(
-                f"extrinsics_list[{i}] must have shape (3, 4) or (4, 4), got {ext.shape}"
-            )
+            raise ValueError(f"extrinsics_list[{i}] must have shape (3, 4) or (4, 4), got {ext.shape}")
 
         H, W = depth.shape
+        if conf is not None and conf.shape != (H, W):
+            raise ValueError(f"depth_conf_list[{i}] must have shape {(H, W)}, got {conf.shape}")
 
         if rgb_list is not None:
             rgb = np.asarray(rgb_list[i])
             if rgb.shape[:2] != (H, W) or rgb.ndim != 3 or rgb.shape[2] != 3:
-                raise ValueError(
-                    f"rgb_list[{i}] must have shape (H, W, 3) matching depth, got {rgb.shape}"
-                )
+                raise ValueError(f"rgb_list[{i}] must have shape (H, W, 3) matching depth, got {rgb.shape}")
             if rgb.dtype != np.uint8:
                 if np.issubdtype(rgb.dtype, np.floating):
                     rgb = np.clip(rgb, 0.0, 1.0)
@@ -95,7 +115,9 @@ def merge_rgbd_to_pointcloud_numpy(
 
         valid = np.isfinite(depth) & (depth > min_depth) & stride_mask
         if max_depth is not None:
-            valid &= (depth < max_depth)
+            valid &= depth < max_depth
+        if conf is not None:
+            valid &= np.isfinite(conf) & (conf >= float(min_confidence))
 
         if not np.any(valid):
             continue
@@ -208,10 +230,11 @@ class DepthAnything3:
         self.expected_num_images = expected_num_images
         self.input_name = input_name
 
-        print(f"Start {self.model_name} from {triton_url}")
+        logger.info("Start %s from %s", self.model_name, triton_url)
 
         self.desired_outputs = [
             grpcclient.InferRequestedOutput("depth"),
+            grpcclient.InferRequestedOutput("depth_conf"),
             grpcclient.InferRequestedOutput("intrinsics"),
             grpcclient.InferRequestedOutput("extrinsics"),
         ]
@@ -271,9 +294,7 @@ class DepthAnything3:
         if len(images) == 0:
             raise ValueError("images must contain at least one image")
         if self.expected_num_images is not None and len(images) != self.expected_num_images:
-            raise ValueError(
-                f"Expected {self.expected_num_images} images, got {len(images)}"
-            )
+            raise ValueError(f"Expected {self.expected_num_images} images, got {len(images)}")
 
         image_rgbs = []
         orig_sizes = []
@@ -320,6 +341,7 @@ class DepthAnything3:
         )
 
         depth = self.get_response(response, "depth")
+        depth_conf = self.get_response(response, "depth_conf")
         extrinsics = self.get_response(response, "extrinsics")
         intrinsics = self.get_response(response, "intrinsics")
 
@@ -329,23 +351,25 @@ class DepthAnything3:
 
         num_images = meta["num_images"]
         if depth.shape[1] != num_images:
-            raise ValueError(
-                f"Output image count mismatch: input has {num_images}, output has {depth.shape[1]}"
-            )
+            raise ValueError(f"Output image count mismatch: input has {num_images}, output has {depth.shape[1]}")
+        if depth_conf.shape != depth.shape:
+            raise ValueError(f"Unexpected depth_conf output shape: {depth_conf.shape}, expected {depth.shape}")
 
         depth_list = []
+        depth_conf_list = []
         intrinsics_list = []
         extrinsics_list = []
 
         for i in range(num_images):
             depth_i = depth[0, i]
+            depth_conf_i = depth_conf[0, i]
             orig_h, orig_w = meta["orig_sizes"][i]
             factor_x = orig_w / depth_i.shape[1]
             factor_y = orig_h / depth_i.shape[0]
-            depth_i_resized = cv2.resize(
-                depth_i, (orig_w, orig_h), interpolation=cv2.INTER_CUBIC
-            )
+            depth_i_resized = cv2.resize(depth_i, (orig_w, orig_h), interpolation=cv2.INTER_CUBIC)
+            depth_conf_i_resized = cv2.resize(depth_conf_i, (orig_w, orig_h), interpolation=cv2.INTER_LINEAR)
             depth_list.append(depth_i_resized)
+            depth_conf_list.append(depth_conf_i_resized.astype(np.float32))
             intri = intrinsics[0, i].copy()
             intri[0, 0] *= factor_x
             intri[0, 2] *= factor_x
@@ -357,11 +381,11 @@ class DepthAnything3:
             intrinsics_list.append(intri)
             extrinsics_list.append(extrinsics[0, i])
 
-
         return {
-            "depth_list": depth_list,                   # list of HxW
-            "intrinsics_list": intrinsics_list,           # list of 3x3
-            "extrinsics_list": extrinsics_list,           # list of 3x4
+            "depth_list": depth_list,  # list of HxW
+            "depth_conf_list": depth_conf_list,  # list of HxW
+            "intrinsics_list": intrinsics_list,  # list of 3x3
+            "extrinsics_list": extrinsics_list,  # list of 3x4
         }
 
     def run_paths(self, image_paths):
@@ -380,36 +404,51 @@ class DepthAnything3:
     def save_visualizations(self, result, prefix="depth"):
         for i, depth_i in enumerate(result["depth_list"]):
             depth_i_vis = self._depth_to_vis(depth_i)
+            conf_i = None
+            if "depth_conf_list" in result and i < len(result["depth_conf_list"]):
+                conf_i = np.asarray(result["depth_conf_list"][i], dtype=np.float32)
             save_path = f"{prefix}_{i}.png"
             depth_u8 = (np.clip(depth_i_vis, 0, 1) * 255).astype(np.uint8)
-            cv2.imwrite(save_path, depth_u8)
-            print(f"Saved {save_path}")
+            if conf_i is not None:
+                conf_u8 = (np.clip(conf_i, 0.0, 10.0) * 25).astype(np.uint8)
+                vis = np.concatenate([depth_u8, conf_u8], axis=1)
+            else:
+                vis = depth_u8
+            cv2.imwrite(save_path, vis)
+            logger.info("Saved %s", save_path)
 
 
 if __name__ == "__main__":
+    configure_logging()
+
     da3 = DepthAnything3(
         triton_url="0.0.0.0:8001",
         expected_num_images=None,
     )
 
     import glob
+
     image_paths = glob.glob("data/da3/*.jpg")
+    image_paths += glob.glob("data/da3/*.png")
+    image_paths.sort()
 
     time_ms_begin = time.time() * 1000
     result, images = da3.run_paths(image_paths)
     time_ms_end = time.time() * 1000
-    print(f"DA3 used {time_ms_end - time_ms_begin}ms")
+    logger.info("DA3 used %.3fms", time_ms_end - time_ms_begin)
 
     da3.save_visualizations(result, prefix="data/depth")
 
-    print("Generating point cloud to file")
+    logger.info("Generating point cloud to file")
     points, colors = merge_rgbd_to_pointcloud_numpy(
         depth_list=result["depth_list"],
         intrinsics_list=result["intrinsics_list"],
         extrinsics_list=result["extrinsics_list"],
+        depth_conf_list=result.get("depth_conf_list", None),
         rgb_list=images,
         min_depth=0.01,
         max_depth=100.0,
         sample_stride=4,
+        min_confidence=2.0,
     )
     save_pointcloud_ply("data/cloud.ply", points, colors)
